@@ -31,7 +31,16 @@
             color: #FEFF00;
         }
 
-        .header {
+        ul {
+            list-style-type: none;
+            padding-left: 1em;
+        }
+
+        li:before {
+            content: "» ";
+        }
+
+        header {
             text-align: center;
         }
 
@@ -54,13 +63,13 @@
     </style>
 </head>
 <body>
-<div class="header">
+<header>
     <h1>Oooh Client Architecture</h1>
     <i>History, components and design of the Oooh app</i>
     <p>
         by <a href="https://www.linkedin.com/in/allan--bush/">Allan Bush</a> VP of Engineering
     </p>
-</div>
+</header>
 <h2>Starting Up</h2>
 <p>
     Oooh was founded in 2019, its mission was to create a social platform that encouraged safe, positive engagement for
@@ -68,37 +77,37 @@
 </p>
 <p>
     Over the course of 5 and a half years, the product underwent many iterations and pivots. This document provides some
-    history into the major pivots, highlight app components, and the architectural decisions to support the product goal
+    history into the major pivots, app component highlights, and the architectural decisions to support the product goals
     at different stages.
 </p>
 <h3>Why Unity?</h3>
 <p>
-    This is a question that often comes up as the later iterations of the Oooh app are not the traditional strong suite
-    of Unity.
+    This is a question that often comes up, as later iterations of Oooh are not the type of app traditionally created
+    with Unity.
 </p>
 <p>
-    Going back to the beginning, Oooh was founded with a team of engineers who had most recently worked at Disney Club
-    Penguin on their mobile app created with Unity. Additionally, the first iteration of the app was about combining
-    games and videos in one app.
+    Going back to the beginning, Oooh was founded with a team of engineers who had most recently worked at Disney's Club
+    Penguin on a mobile app created with Unity. Additionally, the first iteration of the app was about combining games
+    and videos in one app.
 </p>
 <p>
     With the goal of creating a single code base mobile app capable of running on iOS and Android, a cross-platform
     framework of some type was required. Given the internal expertise, need to create many small games, and the quick
-    prototyping ability of Unity, it was determined as the best option to base the app off of.
+    prototyping ability of Unity, it was chosen as the best option to base the app off of.
 </p>
 <h3>CI/CD</h3>
 <p>
-    The goal of continuous integration for mobile clients was:
+    The goal of continuous integration for the mobile clients was:
 </p>
 <ul>
-    <li>Run and pass unit tests before GitHub pull requests can be merged into protected branches</li>
+    <li>Successfully run unit tests before GitHub pull requests can be merged into protected branches</li>
     <li>Generate an iOS and Android build for every commit to a protected branch</li>
     <li>Allow team members to easily install any CI generated build</li>
 </ul>
 <p>
     Given the requirement to create iOS builds, a CI system running OSX was required. At the time, there were few cloud
-    providers with this option. Additionally, we've never had a dedicated dev ops / build engineer, so something with a
-    simple setup and without the need for continuous maintenance was preferred.
+    providers with this option. Additionally, we didn't have a dedicated dev ops / build engineer (and never did), so
+    something with a simple setup and without the need for continuous maintenance was required.
 </p>
 <p>
     Unity Cloud Build (now Unity Build Automation) was our chosen solution, and the following setup was created.
@@ -106,19 +115,19 @@
 <ul>
     <li>PR opened → GitHub webhook → AWS Lambda function → Create UCB build configuration from a template</li>
     <li>Commit to a PR branch → Run Unity Unit Tests → UCB webhook → AWS Lambda function → Set GitHub commit status</li>
-    <li>After a PR review + a successful run on the Unit tests allow the branch to be merged</li>
+    <li>After a PR review and a successful run of the Unit tests, allow the branch to be merged</li>
     <li>Commit to a protected branch (release/* | main) → Build Android + iOS builds in UCB</li>
     <li>iOS builds signed using fastlane + match</li>
-    <li>Successful iOS build added to testflight, Android builds sent to Google Play Console</li>
+    <li>Successful iOS build added to TestFlight, release candidate Android builds uploaded to Google Play Console</li>
     <li>Debug symbols uploaded to Crashlytics</li>
 </ul>
 <dialog open class="warning">
-    At the time of choosing UCB was a flat rate of $30 a month, it's now a metered and was costing ~$1000 a month for a
-    team of < 10 engineers. The service is also:
+    At the time of choosing UCB was a flat rate of $30 a month, it's now pay as you go and was costing ~$1000 a month for
+    a team of < 10 engineers. The service is also:
     <ul>
         <li>very slow: builds are 5x slower than local builds</li>
         <li>unreliable: ~5% of builds fail due to random network issues or build node failures</li>
-        <li>outdated: Xcode 15.3 still isn't available — 7 months after release, as of the time of writing</li>
+        <li>outdated: Xcode 15.3 still isn't available — 7 months after release and counting</li>
     </ul>
     If I was picking a CI/CD system for a Unity project today, I would look elsewhere.
 </dialog>
@@ -154,8 +163,8 @@
 <p>
     The o3h.js library is written in typescript and compiled down to a broadly available target. The source is self
     documenting, generating the content of a <a href="https://oooh.readme.io/docs/api-reference">ReadMe site</a>. We
-    ensure that the API exposed to modules never changes (only additions and deprecation), and that client communication
-    is backwards and forwards compatible with all available client versions.
+    ensure that the API exposed to modules never changes (only additions and deprecation are allowed), and that client
+    communication is backwards and forwards compatible with all available client versions.
 </p>
 <p>
     The client renders a custom webview and loads a module inside an iframe. Phone and app systems are exposed via
@@ -199,7 +208,7 @@
 </p>
 <p>
     Modules are able to create a layout and specify where on the screen the attached texture source (camera / video
-    player) is rendered. The texture can be rendered below the webview in Unity, in which case the module needs to
+    player) is rendered. The texture can be rendered below the webview using Unity, in which case the module needs to
     render a transparent background to make it visible. Or the texture can be rendered natively above the webview, with
     the option to specify a mask allowing parts of the rectangular textures to be transparent.
 </p>
@@ -221,7 +230,7 @@
     be terminated and lets the video editing continue in the next session.
 </p>
 <p>
-    Most operations are performed using FFMpeg, but some processing intensive operations are performed via native
+    Most operations are performed using FFMpeg, but some processing intensive operations are performed using the native
     functionality provided by iOS and Android. This gives a small performance improvement on iOS, but a huge improvement
     for Android where FFMpeg doesn't support hardware accelerated video editing.
 </p>
@@ -229,11 +238,11 @@
 <p>
     There are many things within <i>Oooh</i> which have been called an <i>oooh</i>, but internally it's the published
     output of running a module. Publishing an oooh involves taking the result from running a module and uploading the
-    assets / data. Modules output a main asset* + an optional collection of other image/video/audio assets + replay
-    data. All of these assets + data associated with how to rerun the module are uploaded together to create an oooh. An
-    oooh is represented in the platform as a video with the option to join. When a user joins the oooh, the module is
-    launched again with access to the assets it outputted previously. The output of that module run can again be uploaded
-    to create a submission to the oooh.
+    assets / data. Modules output a main asset<sup><a href="#1">1</a></sup> + an optional collection of other
+    image/video/audio assets + replay data. All of these assets + data associated with how to rerun the module are
+    uploaded together to create an oooh. An oooh is represented in the platform as a video with the option to join. When
+    a user joins the oooh, the module is launched again with access to the assets it outputted previously. The output of
+    that module run can again be uploaded to create a submission to the oooh.
 </p>
 <p>
     The publishing pipeline is responsible for tracking all the information to upload, plus the video editing pipeline if
@@ -242,8 +251,8 @@
     app is in the background.
 </p>
 <p>
-    * Video at this point in time, eventually this could be only a sticker or nothing at all, and the video recorder
-    would create an image or video to post.
+    <sup><a id="1" href="#1">1</a></sup> Video at this point in time, eventually this could be only a sticker or nothing
+    at all, and the video recorder would create an image or video to post.
 </p>
 <h3>HTML Audio Polyfill</h3>
 <p>
@@ -269,10 +278,10 @@
 <h3>Audio Ducking</h3>
 <p>
     When a user played a module to generate a submission, sometimes we would have both game music and a video recorded by
-    the creator playing, while trying to capture microphone input audio. This would create issues with getting a clean
-    capture of the submitters' voice. To combat this, a system was put into place to automatically reduce the output
-    volume of the app when we detected someone talking. Afterwards, we could boost the ducked output in the final
-    recording as the different audio sources where captured in different audio tracks.
+    the creator playing. While capturing microphone input audio, this would create issues with cleanly capturing the
+    voice of the submitter. To combat this, a system was put into place to automatically reduce the output volume of the
+    app when we detected someone talking. Afterwards, we could boost the ducked output in the final recording as the
+    different audio sources where captured in different audio tracks.
 </p>
 <h3>Native Audio</h3>
 <p>
@@ -281,7 +290,7 @@
 <h3>Live Capture ML</h3>
 <p>
     Machine learning models were used to perform body tracking, face tracking, and image segmentation in real time on
-    either videos or a camera capture stream. This information was exposed via the o3h.js API to allow modules to use it
+    either videos or a camera capture streams. This information was exposed via the o3h.js API to allow modules to use it
     in gameplay.
 </p>
 <p>
@@ -289,14 +298,14 @@
     performance issues with the library.
 </p>
 <p>
-    Initially, body tracking used a custom tensorflow lite integration with the PoseNet model. This was updated to use
-    the NatML plugin with the BlazePose model. With the plan being to migrate off of Banuba using models with this plugin
-    as well.
+    Initially, body tracking used a custom tensorflow lite integration with the PoseNet model. This was later upgraded to
+    use the NatML plugin with the BlazePose model. With the plan being to migrate off of Banuba using models with this
+    plugin as well.
 </p>
 <h3>Speech To Text</h3>
 <p>
-    Using speech to text capabilities provided by the mobile operating systems (Android 13+ only) to convert microphone
-    input into a stream of text.
+    Using speech to text capabilities provided by the mobile operating systems (iOS and Android 13+) to convert
+    microphone input into a stream of text.
 </p>
 
 <h2>Streaming</h2>
@@ -311,8 +320,8 @@
     additional user permissions.
 </p>
 <p>
-    Can also temporarily inject another texture into the stream, to support private app moments, like selecting an image
-    from your camera roll.
+    This can also temporarily inject another texture into the stream, to support private app moments, like selecting an
+    image from your camera roll.
 </p>
 <h3>SRT Streaming</h3>
 <p>
@@ -321,18 +330,18 @@
     a srt or rtp stream internally and expose it to streaming software.
 </p>
 <p>
-    Additional benefits to this approach is that it allows use to guide non-technical users with the setup process from
+    Additional benefits to this approach is that it allowed us to guide non-technical users with the setup process from
     within the app. It also added a layer of privacy in that OS notifications are not captured, and we were able to
-    create sensitive areas within our own app where even the live content is not streamed.
+    create sensitive areas within our own app where the live content is not streamed.
 </p>
 <p>
-    The video streaming is possible using FFMpeg on both iOS and Android. With iOS using an integration of HaishinKit
-    swift library as it provided lower latency than FFMpeg.
+    Video streaming is done using FFMpeg on both iOS and Android. With iOS an additional integration of the HaishinKit
+    swift library was done as it provided lower latency than FFMpeg.
 </p>
 
 <h2>Group Chat</h2>
 <p>
-    The final iteration of the Oooh app was to be a group chat experience, integrating modules as interactive chat
+    The final iteration of the Oooh app was to become a group chat experience, integrating modules as interactive chat
     elements to anchor a thread.
 </p>
 <img src="GroupChat.webp" alt="Group Chat screenshot">
@@ -371,7 +380,7 @@
         the owner to respond to them all at once.
     </li>
     <li>Suggested links — gets the topics of conversation using ChatGPT and generates news and video links for that topic
-        using new service APIs.
+        using news service APIs.
     </li>
     <li>
         Suggested Ooohs — using the topic of conversation getting the data needed to publish selected ooohs from ChatGPT
@@ -387,15 +396,16 @@
 <p>
     The goal being third party developers can write AWS lambda functions that are triggered by client actions or server
     events. These functions would create / modify extension data, and clients would reflect the changes in realtime. This
-    expands on the capabilities of modules allowing the rendered outputs to be updated after the fact.
+    expands on the capabilities of modules, allowing the rendered outputs to be updated without a user reopening a
+    module.
 </p>
 <p>
-    The full extension system was scheduled to launch with the next client before Oooh shutdown. The first example was a
-    poll extension. The flowing here being that one client would create a poll, this would call an AWS lambda function,
-    which would create a comment and attach a poll extension containing the poll options. All clients in the group would
-    render the comment with the poll extension to reflect that it's a poll. When another client votes on the poll,
-    another AWS lambda function is called which updates the vote counts on the poll extension data. Finally, to complete
-    the loop, all clients would update to show the new vote counts on the poll.
+    The full extension system was scheduled to launch with the next client release before Oooh shutdown. The first
+    example was a poll extension. The flow being that one client would create a poll, this would call an AWS
+    lambda function, which would create a comment and attach a poll extension containing the poll options. All clients in
+    the group would render the comment with the poll extension to reflect that it's a poll. When another client votes on
+    the poll, another AWS lambda function is called which updates the vote counts on the poll extension data. Finally, to
+    complete the loop, all clients would update to show the new vote counts on the poll.
 </p>
 <p>
     Another example is the AI Summary feature was updated to use extensions. Mostly using server events (i.e.: someone
@@ -406,15 +416,15 @@
 
 <h2>Other Components</h2>
 <p>
-    This history isn't strictly linear, and some developments don't strictly fit in the narrative. Here are some other
-    notable components used in the Oooh app.
+    This history isn't strictly linear, and some developments don't fit in the narrative. Here are some other notable
+    components used in the Oooh app.
 </p>
 <h3>Off Thread Native Image Decoding</h3>
 <p>
     To dynamically load image data and render it in Unity, you need to use the <a
         href="https://docs.unity3d.com/ScriptReference/ImageConversion.LoadImage.html">LoadImage</a> function. This has
-    performance issues as it needs to run on the main thread and it both decodes the image and populates the texture.
-    With a large image or several small images, frame drops will be very noticeable.
+    performance issues in that it both decodes the image and populates the texture on the main thread. With a large image
+    or several small images, frame drops are very noticeable.
 </p>
 <p>
     To resolve this, we developed our own decoding pipeline that runs asynchronously off the main thread. Using the image
@@ -473,12 +483,12 @@
 <p>
     Adding an annotation to a class property plus injection of a binder can automatically change the value of the
     property based on an override setup in firebase remote configuration. This can also be used to A/B test different
-    values as configured remotely.
+    values, as configured remotely.
 </p>
 <h3>Networking</h3>
 <p>
-    Network code is generated from webservice endpoints using OpenAPI. GraphQL schema is generated using
-    graphql-codegen/c-sharp.
+    Network code is generated from webservice endpoints using OpenAPI. GraphQL schema is generated using the
+    graphql-codegen/c-sharp npm package.
 </p>
 <p>
     Network requests are given a reactive priority, and low priority requests are queued (or all requests if there's too
