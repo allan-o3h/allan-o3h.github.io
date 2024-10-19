@@ -3,13 +3,20 @@
 <head>
     <title>Oooh Client Architecture</title>
     <style>
+
+        :root {
+            --main-text-color: #F5F7FA;
+            --secondary-text-color: #E4E7EB;
+            --link-color: #FEFF00;
+        }
+
         body {
             max-width: 80ch;
             margin: auto;
             background-image: url("background.jpg");
             background-repeat: repeat-x;
             background-color: #DA1CB9;
-            color: #F5F7FA;
+            color: var(--main-text-color);
             padding: 10px;
         }
 
@@ -18,7 +25,7 @@
         }
 
         h3 {
-            color: #E4E7EB;
+            color: var(--secondary-text-color);
         }
 
         img {
@@ -28,12 +35,24 @@
 
         a {
             text-decoration: none;
-            color: #FEFF00;
+            color: var(--link-color);
         }
 
         ul {
             list-style-type: none;
             padding-left: 1em;
+        }
+
+        figure {
+            border: 1px var(--secondary-text-color) solid;
+            padding: 1em 1em 0 1em;
+            width: fit-content;
+            margin: auto;
+        }
+
+        figcaption {
+            text-align: center;
+            color: var(--secondary-text-color);
         }
 
         li:before {
@@ -58,7 +77,43 @@
 
         dialog {
             position: static;
-            color: #F5F7FA;
+            color: var(--main-text-color);
+        }
+
+        .column {
+            box-sizing: border-box;
+            float: left;
+            width: 50%;
+            padding-right: 1em;
+        }
+
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        @media screen and (max-width: 80ch) {
+            .column {
+                width: 100%;
+            }
+        }
+
+        @media print {
+            :root {
+                --main-text-color: black;
+                --secondary-text-color: black;
+                --link-color: black;
+            }
+
+            body {
+                background-color: white;
+                background-image: none;
+            }
+
+            img {
+                max-height: 300px;
+            }
         }
     </style>
 </head>
@@ -72,13 +127,13 @@
 </header>
 <h2>Starting Up</h2>
 <p>
-    Oooh was founded in 2019, its mission was to create a social platform that encouraged safe, positive engagement for
+    Oooh was founded in 2019. Its mission was to create a social platform that encouraged safe, positive engagement for
     its community of users.
 </p>
 <p>
-    Over the course of 5 and a half years, the product underwent many iterations and pivots. This document provides some
-    history into the major pivots, app component highlights, and the architectural decisions to support the product goals
-    at different stages.
+    Over the course of five and a half years, the product underwent many iterations and pivots. This document provides
+    some history into the major pivots, app component highlights, and the architectural decisions to support the product
+    goals at different stages.
 </p>
 <h3>Why Unity?</h3>
 <p>
@@ -86,31 +141,28 @@
     with Unity.
 </p>
 <p>
-    Going back to the beginning, Oooh was founded with a team of engineers who had most recently worked at Disney's Club
-    Penguin on a mobile app created with Unity. Additionally, the first iteration of the app was about combining games
-    and videos in one app.
+    Oooh was founded by a team of engineers who previously worked on Disney's Club Penguin mobile app, created with
+    Unity. Additionally, the first iteration of the app was based on combining games and videos in one app.
 </p>
 <p>
-    With the goal of creating a single code base mobile app capable of running on iOS and Android, a cross-platform
-    framework of some type was required. Given the internal expertise, need to create many small games, and the quick
-    prototyping ability of Unity, it was chosen as the best option to base the app off of.
+    With the goal of creating a single codebase app capable of running on iOS and Android, a cross-platform framework of
+    some type was required. Given the internal expertise, the need to create many small games, and the quick prototyping
+    ability of Unity, Unity was chosen as the best option to create the app.
 </p>
 <h3>CI/CD</h3>
 <p>
-    The goal of continuous integration for the mobile clients was:
+    The goal of continuous integration for the mobile client was to:
 </p>
 <ul>
-    <li>Successfully run unit tests before GitHub pull requests can be merged into protected branches</li>
+    <li>Successfully run unit tests before GitHub pull requests could be merged into protected branches</li>
     <li>Generate an iOS and Android build for every commit to a protected branch</li>
     <li>Allow team members to easily install any CI generated build</li>
 </ul>
 <p>
     Given the requirement to create iOS builds, a CI system running OSX was required. At the time, there were few cloud
-    providers with this option. Additionally, we didn't have a dedicated dev ops / build engineer (and never did), so
-    something with a simple setup and without the need for continuous maintenance was required.
-</p>
-<p>
-    Unity Cloud Build (now Unity Build Automation) was our chosen solution, and the following setup was created.
+    providers with this option. Additionally, we didn't have a dedicated dev ops / build engineer — and never did — so
+    something with a simple setup and without the need for continuous maintenance was required. Unity Cloud Build (now
+    Unity Build Automation) was our chosen solution, and the following setup was created:
 </p>
 <ul>
     <li>PR opened → GitHub webhook → AWS Lambda function → Create UCB build configuration from a template</li>
@@ -122,243 +174,277 @@
     <li>Debug symbols uploaded to Crashlytics</li>
 </ul>
 <dialog open class="warning">
-    At the time of choosing UCB was a flat rate of $30 a month, it's now pay as you go and was costing ~$1000 a month for
-    a team of < 10 engineers. The service is also:
+    At the time of choosing UCB, it was a flat rate of $30 a month. It's now pay as you go and was costing ~$1000 a month
+    for a team of < 10 engineers. The service is also:
     <ul>
         <li>very slow: builds are 5x slower than local builds</li>
         <li>unreliable: ~5% of builds fail due to random network issues or build node failures</li>
-        <li>outdated: Xcode 15.3 still isn't available — 7 months after release and counting</li>
+        <li>outdated: Xcode 15.3 still isn't available — 7 months after its release and counting</li>
     </ul>
     If I was picking a CI/CD system for a Unity project today, I would look elsewhere.
 </dialog>
 
 <h2>Videos and Games</h2>
 <p>
-    The first iteration of Oooh was a platform for videos and games targeting young children. With the primary focus
-    being to encourage game play as additional interaction vs. the alternative of passively watching videos for too long.
+    The first iteration of Oooh was a platform of videos and games for young children. The primary focus was to encourage
+    game play as additional interaction instead of passively watching videos for long periods of time.
 </p>
-<img src="MileStone0.webp" alt="Video and Games version screenshot">
+<figure>
+    <img src="MileStone0.webp" alt="Video and Games version screenshot">
+    <figcaption>Early App Screenshot</figcaption>
+</figure>
 <h3>Module Engine</h3>
 <p>
-    Although we were able to create casual games internally relatively quickly, if Oooh was going to be a platform, we
-    would need a way for third party developers to create their own games as well. Evaluating the options for runtime
-    delivery of new games, we decided to support running HTML games inside our app.
+    Although we were able to create first-party casual games relatively quickly, if Oooh was going to be a platform, we
+    needed a way for third-party developers to create their own games. Evaluating the options for runtime delivery of new
+    games, we decided to support running HTML games inside our app as it was the simplest and most flexible option.
 </p>
 <p>
-    Interactive content was known internally as a <i>module</i>, as the content was never limited to being a game. This
-    was the start of what was known internally as the <i>Module Engine</i>, which allowed a module running either in
-    Unity or in a webview to interact with the rest of the app.
+    Not wanting to limit HTML content to games, we coined the term <i>module</i> to represent an interactive experience.
+    And created the <i>Module Engine</i>, which allowed a module running either in Unity or in a webview to
+    interact with the rest of the app.
 </p>
 <p>
-    The module engine controls the flow of handing off control from the app to the module and back. Enabling
-    communication between C# code in the app and JavaScript in the module, allowing the content running within a webview
-    inside an app to do many things which are normally limited to full apps.
+    The Module Engine controls the flow of handing-off UI control from the app to the module and vice versa. It enables
+    communication between C# code in the app and JavaScript in the module. This allows the content running within a
+    webview inside an app to do many things which are normally limited to native apps.
 </p>
-<img src="ModuleEngine.webp" alt="Module Engine Architecture diagram">
+<figure>
+    <img src="ModuleEngine.webp" alt="Module Engine Architecture diagram">
+    <figcaption>Module Engine Architecture</figcaption>
+</figure>
 <p>
-    Modules are versioned so that replays of the same oooh always run against the same version of the code, and third
-    party developers don't need to worry about version incompatibilities in their data. They communicate with the app via
-    the <a href="https://module.oooh.io/api/o3h.js">o3h.js</a> library loaded at runtime.
-</p>
-<p>
-    The o3h.js library is written in typescript and compiled down to a broadly available target. The source is self
-    documenting, generating the content of a <a href="https://oooh.readme.io/docs/api-reference">ReadMe site</a>. We
-    ensure that the API exposed to modules never changes (only additions and deprecation are allowed), and that client
-    communication is backwards and forwards compatible with all available client versions.
+    In our app, modules are versioned so that user replays always run against the same version of the code, and
+    third-party developers don't need to worry about version incompatibilities in their data. They communicate with the
+    app via the <a href="https://module.oooh.io/api/o3h.js">o3h.js</a> library loaded at runtime.
 </p>
 <p>
-    The client renders a custom webview and loads a module inside an iframe. Phone and app systems are exposed via
-    communication through the API via the iframe.
+    The o3h.js library is written in typescript and compiled down to a wildly supported runtime target. The source is
+    self-documenting, generating the content of a <a href="https://oooh.readme.io/docs/api-reference">ReadMe site</a>.
+    Also, we ensure that the API exposed to modules never changes (only additions and deprecation are allowed), and that
+    client communication is backwards and forwards compatible with all available client versions.
+</p>
+<p>
+    The client renders a custom webview and loads a module inside an iframe. Phone and app systems are exposed by
+    communicating through the API via the iframe.
 </p>
 <h3>Unity Bridge</h3>
 <p>
     Communication from C# to JavaScript mainly occurs via passing string data evaluated as function calls. Data is passed
-    from JavaScript to C# via JSON strings which are parsed to execute a C# function.
+    from JavaScript to C# by JSON strings which are parsed to execute a C# function.
 </p>
 <p>
     An annotation is applied to any C# function that is eligible to be called from JavaScript. C# object instances are
-    referenced via a unique id and ownership can be passed to JavaScript. Module context is generally short-lived, but
+    referenced via a unique ID, and ownership can be passed to JavaScript. Module context is generally short-lived, but
     when a C# object owned by JavaScript is garbage collected, it'll be destroyed in C# as well.
 </p>
 <p>
-    To eliminate the usage of reflection and memory allocation, information about annotated functions is pre-compiled at
-    build time, and specialized JSON parsing is performed at runtime which doesn't allocate additional memory.
+    To eliminate the usage of reflection, information about annotated functions is pre-compiled at build time.
+    Specialized JSON parsing is performed at runtime to eliminate additional memory allocations.
 </p>
 <p>
-    For passing large amounts of data from C# to JavaScript, such as image data, raw microphone input samples, etc...
-    There's an alternative flow where raw bytes are passed from C# to native code where they are exposed to JavaScript
-    via a resource path. As an example, when you connect an AudioNode or an AudioParam to a <a
-        href="https://oooh.readme.io/docs/api-reference-microphoneaudionode">MicrophoneAudioNode</a> internally it'll
-    start polling a file at o3h://&lt;objectId&gt; for the microphone audio data.
+    For passing large amounts of data, such as image data, microphone samples, etc... from C# to JavaScript, there's an
+    alternative flow. Raw bytes are passed from C# to native code and exposed to JavaScript via a resource path. For
+    example, when you connect an AudioNode or an AudioParam to a <a
+        href="https://oooh.readme.io/docs/api-reference-microphoneaudionode">MicrophoneAudioNode</a>, internally it'll
+    poll a file at o3h://&lt;objectId&gt; for the microphone audio samples.
 </p>
 <h3>Camera</h3>
 <p>
-    Initially, we used a third party plugin to capture and render the camera in Unity. However, we found the available
-    options limiting, so we created our own plugin for this.
+    Initially, we used a third-party plugin to capture and render the device camera in Unity. However, we found the
+    available plugins lacking, and created our own camera plugin.
 </p>
 <p>
-    Our plugin is session-based, allowing multiple consumers to make concurrent requests and share the same captured
-    texture. It also supports dual camera on supporting devices, and controls the camera resolution.
+    Our plugin is session-based, and allows multiple consumers to make concurrent requests, sharing the same captured
+    texture. It also supports dual camera when available, and allows adjustment of the camera resolution.
 </p>
 <h3>Native Texture Composer</h3>
 <p>
-    Before iOS 15, Apple did not allow a webview within an app to access the camera. Working around that limitation and
-    given that our platform was already playing videos, we added a way for modules to have the app render textures while
-    the webview was running.
+    Before iOS 15, a webview embedded in an app wasn't able to access the camera. Working around that limitation, we
+    added a way for modules to control app texture rendering outside the webview.
 </p>
 <p>
-    Modules are able to create a layout and specify where on the screen the attached texture source (camera / video
-    player) is rendered. The texture can be rendered below the webview using Unity, in which case the module needs to
-    render a transparent background to make it visible. Or the texture can be rendered natively above the webview, with
-    the option to specify a mask allowing parts of the rectangular textures to be transparent.
+    Modules are able to create a layout specifying where on the screen to render a texture source (camera feed,
+    video player, or image). These textures can be rendered below the webview using Unity, in which case the module
+    renders a transparent background to make the texture visible. Or the textures can be rendered natively above the
+    webview, with the option to specify masks, turning areas of a rectangular texture transparent.
 </p>
 
 <h2>Content Creators</h2>
 <p>
-    Leaning into the capabilities of the module engine, Oooh started to target content creators. With the ability for
-    them to create content using modules, having fans also create content based on their content, and finally letting
-    creators react to the fan's content.
+    Leaning into the capabilities of the module engine, Oooh pivoted, target content creators. Creators created content
+    by playing a modules. Fans submitted to the creator's content by playing the same module, with the experience
+    influenced by what the creator had done. And creators could respond to the fan's content by sending personal video
+    responses.
 </p>
-<img src="Creators.webp" alt="Content Creators screenshot">
+<figure>
+    <img src="Creators.webp" alt="Content Creators screenshot">
+    <figcaption>Screenshots of content creation</figcaption>
+</figure>
 <h3>Video Editing Pipeline</h3>
 <p>
     To facilitate the creation of creator videos and fan submissions, several video editing capabilities were added to
-    the app. Including trimming, joining, auto highlighting, and composing.
+    the app. Including trimming, joining, auto highlighting, and compositing.
 </p>
 <p>
     Video operations are chained together as a serialized linear sequence of processing steps. This allows for the app to
-    be terminated and lets the video editing continue in the next session.
+    be terminated and queued video editing to continue in the next session.
 </p>
 <p>
-    Most operations are performed using FFMpeg, but some processing intensive operations are performed using the native
+    Most operations are performed using FFMpeg, but some processing intensive operations are done using the native
     functionality provided by iOS and Android. This gives a small performance improvement on iOS, but a huge improvement
     for Android where FFMpeg doesn't support hardware accelerated video editing.
 </p>
 <h3>Publish Pipeline</h3>
 <p>
     There are many things within <i>Oooh</i> which have been called an <i>oooh</i>, but internally it's the published
-    output of running a module. Publishing an oooh involves taking the result from running a module and uploading the
-    assets / data. Modules output a main asset<sup><a href="#1">1</a></sup> + an optional collection of other
-    image/video/audio assets + replay data. All of these assets + data associated with how to rerun the module are
-    uploaded together to create an oooh. An oooh is represented in the platform as a video with the option to join. When
-    a user joins the oooh, the module is launched again with access to the assets it outputted previously. The output of
-    that module run can again be uploaded to create a submission to the oooh.
+    artifacts of running a module. Publishing an oooh involves uploading the output of a module run. Modules output a
+    main asset<sup><a href="#1">1</a></sup> plus an optional collection of image/video/audio assets and replay data. All
+    of this information, plus data associated with how to rerun the module, are uploaded to create an oooh. An oooh is
+    represented on the platform as a video, with a join button. When a user joins the oooh, the module is launched again
+    and given access to the assets it outputted previously. The output of that module run is again uploaded to create a
+    submission to the oooh.
 </p>
 <p>
     The publishing pipeline is responsible for tracking all the information to upload, plus the video editing pipeline if
-    the video output is edited before being uploaded. All publishing steps are serializable so that publishing can resume
-    if the app restarts. Uploading of assets is performed via a custom native plugin that allows for uploading while the
-    app is in the background.
+    the main video is edited before being posted. All publishing steps are serializable so that publishing can resume if
+    the app restarts. Uploading of assets is performed via a custom native plugin that allows for uploading while the app
+    is in the background.
 </p>
 <p>
-    <sup><a id="1" href="#1">1</a></sup> Video at this point in time, eventually this could be only a sticker or nothing
-    at all, and the video recorder would create an image or video to post.
+    <sup><a id="1" href="#1">1</a></sup> The main asset was limited to being a video at this point in time. Eventually
+    it could be nothing (or more commonly a sticker), and the video recorder created an image or video to post as the
+    main asset.
 </p>
 <h3>HTML Audio Polyfill</h3>
 <p>
-    The webview on iOS runs in a different process, which limits some options for controlling playback. Silent switch
-    behaviour, audio routing, and volume control are some of the things we wanted manged by the app. To work around this,
-    we allowed modules to play audio in Unity via the module API. However, porting existing content or getting third
-    party developers to work with the specialized api was challenging. As such, a JavaScript polyfill was created and
-    injected by the o3h.js API to replace the HTML5 audio spec.
+    The webview on iOS runs as a different process, which limits some options for controlling playback. Silent switch
+    behaviour, audio routing, and volume are some of the things we wanted to manage from the app. To work around this,
+    we allowed modules to play audio in Unity via the o3h.js library. However, porting existing content or getting
+    third-party developers to work with our api was challenging. As such, a JavaScript polyfill was created and injected
+    by the o3h.js library to replace the HTML5 audio spec.
 </p>
 <h3>Module SDK</h3>
-<img src="SDK.webp" alt="SDK screenshot">
-<p>
-    Over the lifetime of Oooh there have been ~160 modules developed, with 84 of them making the cut and being released.
-    The majority of these were created by third party game studios, with 10+ working for Oooh at times. To accommodate
-    this level of module development, an SDK app was created.
-</p>
-<p>
-    The SDK was created from the same code base with an extra preprocessor directive and a custom scene. It presented a
-    simplified app view that allowed you to launch a module directly, configure the inputs to the module, launch a
-    module from an uri of your choosing, mock some of the app provided data, review raw module outputs, and attach the
-    web console from your development machine to the embedded webview in the app.
-</p>
+<div class="row">
+    <div class="column">
+        <p>
+            Over the lifetime of Oooh there have been ~160 modules developed, with 84 of them being released. The
+            majority of these were created by third-party game studios, peaking at over 10 studios working concurrently
+            for Oooh. To accommodate this level of module development, an SDK app was created.
+        </p>
+        <p>
+            The SDK was created from the same code base as the main app. Differing only by a preprocessor directive, and
+            an extra scene. It presents a simplified app view that allows you to:
+        </p>
+        <ul>
+            <li>launch a module directly</li>
+            <li>configure the inputs to the module</li>
+            <li>launch a module from an uri of your choosing</li>
+            <li>mock app provided data</li>
+            <li>review raw module outputs</li>
+            <li>attach the web console from your development machine to the embedded webview</li>
+        </ul>
+    </div>
+    <div class="column">
+        <figure>
+            <img src="SDK.webp" alt="SDK screenshot">
+            <figcaption>Module SDK Screenshot</figcaption>
+        </figure>
+    </div>
+</div>
 <h3>Audio Ducking</h3>
 <p>
-    When a user played a module to generate a submission, sometimes we would have both game music and a video recorded by
-    the creator playing. While capturing microphone input audio, this would create issues with cleanly capturing the
-    voice of the submitter. To combat this, a system was put into place to automatically reduce the output volume of the
-    app when we detected someone talking. Afterwards, we could boost the ducked output in the final recording as the
-    different audio sources where captured in different audio tracks.
+    When a user plays a module to generate a submission, game music, and a video recorded by the creator, may be playing
+    at the same time. While capturing microphone input audio, this creates issues with cleanly capturing the voice of the
+    submitter. To combat this, a system was put into place to automatically reduce the output volume of the app when we
+    detected someone talking. Afterwards, we can boost the ducked output in the final recording, as the game audio is
+    captured in a different audio track.
 </p>
 <h3>Native Audio</h3>
 <p>
-    A custom plugin was developed to control audio sessions and share access to microphone input data.
+    A custom plugin was developed to control audio sessions and allow microphone input data sharing.
 </p>
 <h3>Live Capture ML</h3>
 <p>
     Machine learning models were used to perform body tracking, face tracking, and image segmentation in real time on
-    either videos or a camera capture streams. This information was exposed via the o3h.js API to allow modules to use it
-    in gameplay.
+    either video playback or a camera feed. This information was exposed via the o3h.js library to allow modules to use
+    the tracked positions in gameplay.
 </p>
 <p>
-    Face tracking and image segmentation used a third party SDK provided by Banuba with some local modifications to fix
-    performance issues with the library.
+    Face tracking and image segmentation used a third-party SDK provided by Banuba with some local modifications to fix
+    performance issues.
 </p>
 <p>
-    Initially, body tracking used a custom tensorflow lite integration with the PoseNet model. This was later upgraded to
-    use the NatML plugin with the BlazePose model. With the plan being to migrate off of Banuba using models with this
-    plugin as well.
+    Initially, body tracking used a custom tensorflow lite integration and the PoseNet model. This was later upgraded to
+    use the NatML plugin with the BlazePose model. The plan was to migrate off of Banuba using other free models with
+    this plugin as well.
 </p>
 <h3>Speech To Text</h3>
 <p>
-    Using speech to text capabilities provided by the mobile operating systems (iOS and Android 13+) to convert
-    microphone input into a stream of text.
+    We used speech to text capabilities provided by the mobile operating systems (iOS and Android 13+) to convert
+    microphone input into a stream of text. Like most systems, this was exposed via the o3h.js library and used in
+    gameplay.
 </p>
 
 <h2>Streaming</h2>
 <p>
-    The next pivot was to focus on creators who did livestreaming.
+    The next pivot was to focus on creators who livestreamed, as live reacting to user submissions proved to be very
+    engaging.
 </p>
-<img src="Streaming.jpg" alt="Streaming screenshot">
+<figure>
+    <img src="Streaming.jpg" alt="Streaming screenshot">
+    <figcaption>Streaming example</figcaption>
+</figure>
 <h3>Screen Capture</h3>
 <p>
-    Allow real time capture of app frame data and audio across multiple renders. Using replaykit on iOS but on Android,
-    data is captured across multiple views (native + Unity rendered) and composed into a single frame without any
-    additional user permissions.
+    Allows real time capture of audio and app frame data across multiple OS windows. This uses replaykit on iOS but on
+    Android, data is captured across multiple windows (native + Unity rendered) and composed into a single frame without
+    any additional user permissions.
 </p>
 <p>
-    This can also temporarily inject another texture into the stream, to support private app moments, like selecting an
-    image from your camera roll.
+    This also supports temporarily injecting another texture into the stream, to allow for private app moments, like
+    selecting an image from your camera roll.
 </p>
 <h3>SRT Streaming</h3>
 <p>
-    Do to the use of screen capture to record module gameplay, it wasn't possible to use existing tools to capture
-    the Oooh app in streaming software such as OBS. As an alternative, we added the ability for the Oooh app to generate
-    a srt or rtp stream internally and expose it to streaming software.
+    Due to our use of screen capture to record module gameplay, it isn't possible to use existing tools to capture the
+    Oooh app in streaming software such as OBS. As an alternative, we added the ability for the Oooh app to generate
+    its own srt or rtp stream and exposed it to streaming software.
 </p>
 <p>
-    Additional benefits to this approach is that it allowed us to guide non-technical users with the setup process from
-    within the app. It also added a layer of privacy in that OS notifications are not captured, and we were able to
-    create sensitive areas within our own app where the live content is not streamed.
+    An additional benefit to this approach is that it allows us to guide non-technical users with a setup process from
+    within the app. It also adds a layer of privacy in that OS notifications are not captured, and we are able to create
+    sensitive areas within our app where the live content is not streamed.
 </p>
 <p>
-    Video streaming is done using FFMpeg on both iOS and Android. With iOS an additional integration of the HaishinKit
-    swift library was done as it provided lower latency than FFMpeg.
+    Video streaming is achieved using FFMpeg on both iOS and Android. With iOS, an additional integration of the
+    HaishinKit swift library was done as it provided lower latency than FFMpeg.
 </p>
 
 <h2>Group Chat</h2>
 <p>
-    The final iteration of the Oooh app was to become a group chat experience, integrating modules as interactive chat
-    elements to anchor a thread.
+    The final iteration of the Oooh app was a group chat experience, using ooohs as interactive elements anchoring chat
+    threads.
 </p>
-<img src="GroupChat.webp" alt="Group Chat screenshot">
+<figure>
+    <img src="GroupChat.webp" alt="Group Chat screenshot">
+    <figcaption>Chat within a group</figcaption>
+</figure>
 <h3>Native Text Input</h3>
 <p>
-    Unity provides a text input field, and there's a number of text input plugins, but none of them fully match the text
-    input experience of using a native app. Now that our app centered around chatting, these flaws became very visible.
+    Unity provides a text input field, and there are a number of third-party text input plugins, but none of them fully
+    match the text input experience of using a native app. Now that our app centered around chatting, these flaws became
+    quite noticeable, and we created our own plugin.
 </p>
 <p>
-    Our text input plugin works by rendering a native text input field above Unity when the text input is focused. This
-    ensures the look and feel are 100% native regardless of your OS version.
+    Our text input plugin works by rendering a native text input field above Unity when a text input is focused. This
+    ensures that the look and feel are 100% native regardless of your OS version or settings.
 </p>
 <p>
-    This currently requires rendering the entire width of the screen where the text input field is located. To meet
-    design requirements, some additional supported functionality is: rendering buttons beside the input field, rendering
+    This currently requires native rendering the entire width of the screen, not just the text input field. To meet
+    design requirements, additional supported functionality is: rendering buttons beside the input field, rendering
     buttons inside the input field, animated collapse / expansion of button lists in the input field, and making the
-    input field height grow / shrink based on input size.
+    input field's height grow / shrink based on input size.
 </p>
 <h3>Photo Picker</h3>
 <p>
@@ -526,9 +612,9 @@
 <ul>
     <li><a href="https://www.linkedin.com/in/jamesmaxwellhall/">James Hall</a> — Lead Senior Engineer</li>
     <li><a href="https://www.linkedin.com/in/tylervenables/">Tyler Venables</a> — Senior Engineer</li>
-    <li><a href="https://www.linkedin.com/in/matt-delorme-47b1a4172/">Matt Delorme</a> — Software Engineer</li>
     <li><a href="https://www.linkedin.com/in/simon-roscoe/">Simon Roscoe</a> — Lead Software Engineer</li>
     <li><a href="https://www.linkedin.com/in/danielle-tilley">Danielle Tilley</a> — Lead Senior Engineer</li>
+    <li><a href="https://www.linkedin.com/in/matt-delorme-47b1a4172/">Matt Delorme</a> — Software Engineer</li>
     <li><a href="https://www.linkedin.com/in/rogerbraunstein/">Roger Braunstein</a> — Principal Software engineer</li>
     <li><a href="https://www.linkedin.com/in/josephdasilva24">Joseph Da Silva</a> — Software Engineer</li>
     <li><a href="https://www.linkedin.com/in/dylllllan/">Dylan Aujla</a> — Software Engineer</li>
@@ -540,6 +626,7 @@
     <li><a href="https://www.linkedin.com/in/roylovejoy-codepoet/">Roy Lovejoy</a> — Principal Software Engineer</li>
     <li><a href="https://www.linkedin.com/in/russ-horton-a109771a/"> Russ Horton</a> — Lead Game Designer</li>
     <li><a href="https://www.linkedin.com/in/kyall-barrows-6665454/">Kyall Barrows</a> — Software Engineer</li>
+    <li><a href="https://www.linkedin.com/in/isabella-fawcett-jones/">Isabella Fawcett-Jones</a> — Software Engineer</li>
     <li><a href="https://www.linkedin.com/in/mason-macklem-b45b662b/"> Mason Macklem</a> — Senior Researcher</li>
 
 
