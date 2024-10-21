@@ -44,7 +44,7 @@
         }
 
         figure {
-            border: 1px var(--secondary-text-color) solid;
+            border: 1px var(--secondary-text-color) dashed;
             padding: 1em 1em 0 1em;
             width: fit-content;
             margin: auto;
@@ -93,7 +93,13 @@
             clear: both;
         }
 
-        @media screen and (max-width: 80ch) {
+        @media screen and (width >= 80ch) {
+            .no-padding-in-column {
+                padding-left: 0;
+            }
+        }
+
+        @media screen and (width < 80ch) {
             .column {
                 width: 100%;
             }
@@ -452,52 +458,59 @@
 </p>
 <h3>AI Summary</h3>
 <p>
-    This is a series of suggestions available to group owners to make it easier for them to post content to their group.
+    To encourage and simplify adding content to groups, we exposed a number of utilities to group owners.
 </p>
-<ul>
-    <li>Greet new users — tracks group user list and looks for new additions that haven't been @mentioned by the group
-        owner.
-    </li>
-    <li>Summaries new chat — consolidates all unread messages in the group and uses ChatGPT to summarize the
-        conversation.
-    </li>
-    <li>Active threads — tracks unread message counts in threads and shows the thread with the most unread messages.</li>
-    <li>Common questions — uses ChatGPT to find questions asked of the group owner and groups similar questions, allowing
-        the owner to respond to them all at once.
-    </li>
-    <li>Suggested links — gets the topics of conversation using ChatGPT and generates news and video links for that topic
-        using news service APIs.
-    </li>
-    <li>
-        Suggested Ooohs — using the topic of conversation getting the data needed to publish selected ooohs from ChatGPT
-        and allowing one click posting of an oooh.
-    </li>
-</ul>
+<div class="row">
+    <div class="column">
+        <figure>
+            <img src="AiSummary.webp" alt="AI summary screenshot">
+            <figcaption>AI Summary Panel</figcaption>
+        </figure>
+    </div>
+    <div class="column">
+        <ul class="no-padding-in-column">
+            <li>Summaries chat — consolidate unread messages and use ChatGPT to summarize the conversation.</li>
+            <li>Greet new users — track group members that haven't been @mentioned by the group owner.</li>
+            <li>Active threads — highlight threads with the most unread messages.</li>
+            <li>Common questions — group similar questions asked of the group owner with ChatGPT, allow responding to
+                them all at once.
+            </li>
+            <li>Suggested links — generate news and video links based on the conversation from ChatGPT and news service
+                APIs.
+            </li>
+            <li>Suggested Ooohs — allow one click posting of an oooh using ChatGPT to generate required data based on the
+                conversation.
+            </li>
+        </ul>
+    </div>
+
+</div>
 <h3>Extensions</h3>
 <p>
-    Extensions are a container for untyped data that can be remotely updated and reflected in the app in realtime. Most
-    entities (chat message, group, thread, user) in Oooh can have one or more extensions attached to them. Extensions can
+    Extensions are a container for untyped data that can be remotely updated to modify the app in realtime. Most entities
+    (chat message, group, thread, user) in Oooh can have one or more extensions associated with them. Extensions can
     be published using the publishing pipeline and include multimedia assets.
 </p>
 <p>
-    The goal being third party developers can write AWS lambda functions that are triggered by client actions or server
-    events. These functions would create / modify extension data, and clients would reflect the changes in realtime. This
-    expands on the capabilities of modules, allowing the rendered outputs to be updated without a user reopening a
-    module.
+    The goal of extensions is for third-party developers to write AWS lambda functions, triggered by client actions or
+    server events. These functions would create or modify extension data, and clients would reflect these changes in
+    realtime. This expands on the capabilities of modules, allowing the rendered module outputs to be updated without a
+    user reopening the module.
 </p>
 <p>
     The full extension system was scheduled to launch with the next client release before Oooh shutdown. The first
-    example was a poll extension. The flow being that one client would create a poll, this would call an AWS
-    lambda function, which would create a comment and attach a poll extension containing the poll options. All clients in
-    the group would render the comment with the poll extension to reflect that it's a poll. When another client votes on
-    the poll, another AWS lambda function is called which updates the vote counts on the poll extension data. Finally, to
-    complete the loop, all clients would update to show the new vote counts on the poll.
+    example extension was a poll extension. The flow of a pool is: one client creates a poll by calling an AWS lambda
+    function, which creates a comment and attaches a poll extension, containing the list of poll options. All clients in
+    the group render the comment with the poll extension to reflect that it's a poll. When another client votes on
+    the poll, yet another AWS lambda function is called which updates the vote counts on the poll extension data.
+    Finally, to complete the loop, all clients update to show the new vote count of the poll.
 </p>
 <p>
-    Another example is the AI Summary feature was updated to use extensions. Mostly using server events (i.e.: someone
-    joins the group, or a message is posted to the group), the same data set can be managed server side and stored in
-    extension data. This allows group co-owners to share the summary data, and allows some of the computational heavy
-    requests (i.e.: suggesting links / ooohs) to be preformed before the group owner loads into the group.
+    The AI Summary feature was also updated to use the extension system. Mostly using server events (i.e.: someone
+    joins the group, or a message is posted to the group), the tracking data used by this feature is now managed server
+    side and stored in extension data. This allows group co-owners to share the summary data, and allows some of the
+    computational heavy requests (i.e.: suggesting links / ooohs) to be preformed in advance of group owners requesting
+    it.
 </p>
 
 <h2>Other Components</h2>
@@ -509,44 +522,46 @@
 <p>
     To dynamically load image data and render it in Unity, you need to use the <a
         href="https://docs.unity3d.com/ScriptReference/ImageConversion.LoadImage.html">LoadImage</a> function. This has
-    performance issues in that it both decodes the image and populates the texture on the main thread. With a large image
-    or several small images, frame drops are very noticeable.
+    performance issues in that it both decodes the image and populates the texture on the main thread. With a single
+    large image or several small images, this creates noticeable frame drops at 60 fps.
 </p>
 <p>
-    To resolve this, we developed our own decoding pipeline that runs asynchronously off the main thread. Using the image
-    decoding capabilities of the underlining OS, plus libraries for some image formats with older Android versions.
+    To resolve this, we developed our own decoding pipeline. Our pipeline runs asynchronously off of the main thread and
+    uses the image decoding capabilities of the underlining OS. Android 9+ is supported, which requires third-party
+    libraries for some image formats that aren't supported with the older Android versions.
 </p>
 <p>
-    This allows us to support many more image formats, including animated formats. Animated formats can either show a
-    static frame or show their animation.
+    This allows us to support many more image formats than Unity, including animated formats. Animated formats can either
+    show a static frame or efficiently render the animation.
 </p>
 <h3>UI Scaling</h3>
 <p>
-    To support OS settings for different text sizes, we developed a system to dynamically adjust the reference resolution
+    To support OS settings of different text sizes, we developed a system to dynamically adjust the reference resolution
     on UI Canvas Scaler components. Generally, this "just works" as long as the anchor positions are set properly on all
-    UI Rect Transforms, and it's a great way to catch issues you'd see across different resolution devices anyway.
+    UI Rect Transforms. These are the same issues you see across different device resolutions, making it a useful tool to
+    identify them.
 </p>
 <h3>UI Styles</h3>
 <p>
     To support OS light vs. dark mode, we reduced the colours used in our app to a fixed set of named colours. Light and
-    dark schemas were created mapping each colour name to a colour. Finally, a component that configured the named colour
-    to use was attached alongside every Graphic component.
+    dark schemas were created mapping each colour name to a colour. Finally, a component setting a named colour was
+    attached alongside every Graphic component.
 </p>
 <p>
-    The component subscribed to changes in the active mode and updated the colour of the graphic. Additionally, editor
-    tools were built to allow the different modes to be tested in the scene view.
+    The component subscribes to changes in the active colour schema and updates the colour of the graphic as needed.
+    Additionally, Unity editor tools exist to allow the different schemas to be tested in the scene view.
 </p>
 <h3>Application View Stack</h3>
 <p>
     Navigation of the Oooh app is a series of view changes, each view is a prefab with a state data object. The
-    application view stack controls how many view prefabs are loaded on top of each other and will destroy the prefabs to
-    save memory, restoring them via their state data object when needed.
+    application view stack controls which view prefabs are loaded at a given time and will destroy prefabs to save
+    memory, restoring them via their state data object as needed.
 </p>
 
 <h2>Development Tools</h2>
 <p>
     Oooh has a number of components which don't have direct product impact, but which make development easier for
-    developers. Here are some of the notable components.
+    developers. Here are some of the notable ones.
 </p>
 <h3>OLogger</h3>
 <p>
@@ -555,21 +570,21 @@
 <ul>
     <li>5 logging levels</li>
     <li>Conditionally compile out lower levels in release builds</li>
-    <li>Configurable log level by namespace or class name, either in the editor or at runtime</li>
-    <li>Options to prepend frame count or object instance id to all messages</li>
+    <li>Log level configurable by namespace or class name, in the editor or at runtime</li>
+    <li>Options to prepend frame count or object instance id to messages</li>
     <li>Ability to log messages from native plugins</li>
-    <li>Export logs from current or previous session</li>
+    <li>Export logs from the current or previous session</li>
 </ul>
 <h3>Display Element UI System</h3>
 <p>
     Makes the task of hooking up data to display elements generic. Separating the data source from the elements being
-    rendered. This allows for common UI elements to be added or modified in a prefab without code changes.
+    rendered. This allows for existing properties of UI elements to be added or modified in a prefab without code
+    changes.
 </p>
 <h3>Remote Configurable Properties</h3>
 <p>
-    Adding an annotation to a class property plus injection of a binder can automatically change the value of the
-    property based on an override setup in firebase remote configuration. This can also be used to A/B test different
-    values, as configured remotely.
+    Adding an annotation to a class property can automatically change the value of that property from a firebase remote
+    configuration. This can also be used to A/B test different values, as configured in firebase.
 </p>
 <h3>Networking</h3>
 <p>
@@ -577,8 +592,8 @@
     graphql-codegen/c-sharp npm package.
 </p>
 <p>
-    Network requests are given a reactive priority, and low priority requests are queued (or all requests if there's too
-    many concurrent requests) and executed when network traffic is minimal.
+    Network requests are given a reactive priority, with low priority requests (or all requests if there's too much
+    contention) queued and executed when network traffic is minimal.
 </p>
 <p>
     It's better to make one network request for X items instead of X requests for one item. For places where it's
@@ -601,7 +616,7 @@
 
 <h2>Acknowledgements</h2>
 <p>
-    There are many, many other components in our app: emoji support, video recording, realtime chat, contacts, FTUE,
+    There are many, many other components of our app: emoji support, video recording, realtime chat, contacts, FTUE,
     notification, debug menus, analytics, sharing, deep linking, caching, etc... But I'm limiting the list here to the
     ones which I feel are unique / reusable / interesting.
 </p>
