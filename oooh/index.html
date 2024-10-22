@@ -557,6 +557,14 @@
     application view stack controls which view prefabs are loaded at a given time and will destroy prefabs to save
     memory, restoring them via their state data object as needed.
 </p>
+<h3>File References</h3>
+<p>
+    With video editing, resumable publishing, and third-party modules all accessing the same files, it's challenging to
+    determine when it's safe to delete a file. To ensure unreferenced files aren't left behind, bloating the app install
+    size, a file reference system was created. File usage is reference counted, and files can be either temporary or
+    persistent, with temporary files being deleted when all references are disposed. Additionally, a leak detector
+    notifies developers if there are undisposed file references when terminating the application.
+</p>
 
 <h2>Development Tools</h2>
 <p>
@@ -612,6 +620,12 @@
 <h3>Reference Inspector</h3>
 <p>
     Editor tool to see which components in the scene / prefab reference a given component.
+</p>
+<h3>Dependency Injection</h3>
+<p>
+    The Oooh app makes heavy use of the dependency injection pattern. The Zenject plugin was chosen for this. Zenject
+    works well and supports all of our injection requirements. However, the project is now dead. One change we've made to
+    this plugin was to fix reflection baking, improving runtime dependency resolution and eliminating memory allocations.
 </p>
 
 <h2>Acknowledgements</h2>
